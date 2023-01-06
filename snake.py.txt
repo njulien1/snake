@@ -1,0 +1,406 @@
+import cv2
+import numpy
+import time
+import random
+
+#cGameScreen Handles All the drawing
+#In order to get the basic game you dont need to modify it
+#But if you want to change the colors, Size of the screen etc You are allowed to modify
+class cGameScreen: 
+	#ScreenParameters
+	mcScreenWidth=600
+	mcScreenHeight=700
+	mcTitle="SnakeGame"
+	#SnakeParameters
+	mcSnakeStartingLength=3
+	mcSnakeColor=(0,255,0)
+	#FoodParameters
+	mcFoodLengthIncrement=1
+	mcFoodColor=(0,0,255)
+	#TextParameters
+	mcTextColor=(255,255,255)
+	#LineParameters
+	mcLineStartX=20
+	mcLineStartY=100
+	mcLineDistance=10
+	mcLineColor=(255,255,255)
+	mcNumberOfVerticalLines=56
+	mcNumberOfHorizontalLines=56
+	#Extra
+	mDisplayImage=None;#WhereEverythingGetsDrawn
+	mPressedKey=-1;#TellsWhichKeyIsPressed
+	#UsedForGettingANewScreenImage
+	def fRefreshScreen(self):
+		self.mDisplayImage=numpy.zeros((self.mcScreenHeight,self.mcScreenWidth,3),numpy.uint8)
+	#UsedForDrawingSolidLines
+	def fDrawGameField(self):
+		for vLineID in range(self.mcNumberOfVerticalLines+1):
+			cv2.line(self.mDisplayImage,(self.mcLineStartX+vLineID*self.mcLineDistance,self.mcLineStartY),(self.mcLineStartX+vLineID*self.mcLineDistance,self.mcLineStartY+self.mcNumberOfVerticalLines*self.mcLineDistance),self.mcLineColor,1)
+		for vLineID in range(self.mcNumberOfHorizontalLines+1):
+			cv2.line(self.mDisplayImage,(self.mcLineStartX,self.mcLineStartY+vLineID*self.mcLineDistance),(self.mcLineStartX+self.mcNumberOfHorizontalLines*self.mcLineDistance,self.mcLineStartY+vLineID*self.mcLineDistance),self.mcLineColor,1)
+
+
+
+
+	#UsedForDrawingSnakeToTheGrid
+	def fDrawSnake(self,iXLocation,iYLocation):
+		vTopLeftPoint=(self.mcLineStartX+iXLocation*self.mcLineDistance,self.mcLineStartY+iYLocation*self.mcLineDistance)
+		vBottomRightPoint=(self.mcLineStartX+iXLocation*self.mcLineDistance+self.mcLineDistance,self.mcLineStartY+iYLocation*self.mcLineDistance+self.mcLineDistance)
+		cv2.rectangle(self.mDisplayImage,vTopLeftPoint,vBottomRightPoint,self.mcSnakeColor,-1)
+
+
+
+
+
+
+	#UsedForDrawingFood
+	def fDrawFood(self,iXLocation,iYLocation):
+		vTopLeftPoint=(self.mcLineStartX+iXLocation*self.mcLineDistance,self.mcLineStartY+iYLocation*self.mcLineDistance)
+		vBottomRightPoint=(self.mcLineStartX+iXLocation*self.mcLineDistance+self.mcLineDistance,self.mcLineStartY+iYLocation*self.mcLineDistance+self.mcLineDistance)
+		cv2.rectangle(self.mDisplayImage,vTopLeftPoint,vBottomRightPoint,self.mcFoodColor,-1)
+
+
+
+
+
+
+	#UsedForDrawingText_ScoreCanBeAString
+	def fDrawString(self,iText,iXLocation,iYLocation):
+		cv2.putText(self.mDisplayImage,iText,(iXLocation,iYLocation),cv2.FONT_HERSHEY_SIMPLEX,1,self.mcTextColor,2)
+
+
+
+
+
+
+	#UsedForDisplayingScreen
+	def fDisplayScreen(self):
+		cv2.imshow(self.mcTitle,self.mDisplayImage)
+		vNewKey=cv2.waitKey(1)
+		if(vNewKey!=-1):
+			self.mPressedKey=vNewKey
+
+
+
+
+	#UsedForLearningPressedKey
+	#Returns_-1_IfNoKeyIsPressedYet
+	#ResetsPressedKeyTo_-1_AfterReturn
+	def fGetPressedKey(self):
+		oPressedKey=self.mPressedKey
+		self.mPressedKey=-1
+		return oPressedKey
+#Limit Your Modifications To This Area
+#All Your Code Should be In This Segment
+
+	def moveSnake(self, pressedkey, snakepoints, screen, score, foodlocation):#startingx, startingy
+		self.tail = len(snakepoints)-1
+		self.head = 0
+		self.x = snakepoints[0][0]
+		self.y = snakepoints[0][1]
+		snakememory = snakepoints.copy()
+		
+		if(pressedkey==ord('w')):
+			newhead = snakepoints[self.head][1]-1
+			#if [self.x, newhead] in snakememory:
+				#screen.gameOver(pressedkey,snakepoints)
+			snakepoints.pop(self.tail)
+			snakepoints.insert(0, [self.x,newhead])
+			#print(snakepoints)
+			for snakepoint in snakepoints:
+				screen.fDrawSnake(snakepoint[0],snakepoint[1])#Draw A Snake block on the grid
+			
+
+		if(pressedkey==ord('a')):
+			newhead = snakepoints[self.head][0]-1
+			#if [newhead, self.y] in snakememory:
+				#screen.gameOver(pressedkey, snakepoints)
+			snakepoints.pop(self.tail)
+			snakepoints.insert(0, [newhead, self.y])
+			#print(snakepoints)
+			for snakepoint in snakepoints:
+				screen.fDrawSnake(snakepoint[0],snakepoint[1])#Draw A Snake block on the grid
+			
+
+		if(pressedkey==ord('s')):
+			newhead = snakepoints[self.head][1]+1
+			#if [self.x, newhead] in snakememory:
+				#screen.gameOver(pressedkey, snakepoints)
+			snakepoints.pop(self.tail)
+			snakepoints.insert(0, [self.x,newhead])
+			#print(snakepoints)
+			for snakepoint in snakepoints:
+				screen.fDrawSnake(snakepoint[0],snakepoint[1])#Draw A Snake block on the grid
+
+		if(pressedkey==ord('d')):
+			newhead = snakepoints[self.head][0]+1
+			#if [newhead, self.y] in snakememory:
+				#screen.gameOver(pressedkey, snakepoints)
+			snakepoints.pop(self.tail)
+			snakepoints.insert(0, [newhead, self.y])
+			#print(snakepoints)
+			for snakepoint in snakepoints:
+				screen.fDrawSnake(snakepoint[0],snakepoint[1])#Draw A Snake block on the grid
+		
+	
+	def eatFood(self, pressedkey, snakepoints, screen, score, foodlocation):
+		#foodlocation = [[40,50]]
+		snakememory = snakepoints.copy()
+		if foodlocation[0] == snakememory[0]:
+			#print("Got here!")
+			score += 1
+			self.tail += 1
+
+			#snake grows bigger
+			if(pressedkey==ord('w')):
+				newhead = snakepoints[self.head][1]-1
+				#if [self.x, newhead] in snakememory:
+					#screen.gameOver(pressedkey,snakepoints)
+				snakepoints.append([self.x,newhead])
+				for snakepoint in snakepoints:
+					screen.fDrawSnake(snakepoint[0],snakepoint[1])
+				#screen.updateScore(screen, score)
+
+				randomx = random.randrange(56)
+				randomy = random.randrange(56)
+				screen.fDrawFood(randomx,randomy)
+				foodlocation.pop(0)
+				foodlocation.append([randomx,randomy])
+				screen.fDrawFood(randomx,randomy)
+				screen.fDisplayScreen()
+
+			if(pressedkey==ord('s')):
+				newhead = snakepoints[self.head][1]+1
+				#if [self.x, newhead] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				snakepoints.append([self.x,newhead])
+				for snakepoint in snakepoints:
+					screen.fDrawSnake(snakepoint[0],snakepoint[1])
+				#screen.updateScore(screen, score)
+				randomx = random.randrange(56)
+				randomy = random.randrange(56)
+				screen.fDrawFood(randomx,randomy)
+				foodlocation.pop(0)
+				foodlocation.append([randomx,randomy])
+				screen.fDrawFood(randomx,randomy)
+				screen.fDisplayScreen()
+
+			if(pressedkey==ord('a')):
+				newhead = snakepoints[self.head][0]-1
+				#if [newhead, self.y] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				snakepoints.append([newhead, y])
+				for snakepoint in snakepoints:
+					screen.fDrawSnake(snakepoint[0],snakepoint[1])
+				#screen.updateScore(screen, score)
+				randomx = random.randrange(56)
+				randomy = random.randrange(56)
+				screen.fDrawFood(randomx,randomy)
+				foodlocation.pop(0)
+				foodlocation.append([randomx,randomy])
+				screen.fDrawFood(randomx,randomy)
+				screen.fDisplayScreen()
+
+			if(pressedkey==ord('d')):
+				newhead = snakepoints[self.head][0]+1
+				#if [newhead, self.y] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				snakepoints.append([newhead, y])
+				for snakepoint in snakepoints:
+					screen.fDrawSnake(snakepoint[0],snakepoint[1])
+				#screen.updateScore(screen, score)
+				randomx = random.randrange(56)
+				randomy = random.randrange(56)
+				screen.fDrawFood(randomx,randomy)
+				foodlocation.pop(0)
+				foodlocation.append([randomx,randomy])
+				screen.fDrawFood(randomx,randomy)
+				screen.fDisplayScreen()
+
+
+			#print("Score at end of eatFood: " + str(score))
+
+		
+	def checkBorder(self, screen, snakepoints, pressedkey):
+		if snakepoints[0][0] == -1:
+			screen.gameOver(pressedkey, snakepoints)
+		if snakepoints[0][0] == 56:
+			screen.gameOver(pressedkey, snakepoints)
+		if snakepoints[0][1] == -1:
+			screen.gameOver(pressedkey, snakepoints)
+		if snakepoints[0][1] == 56:
+			screen.gameOver(pressedkey, snakepoints)
+		if snakepoints[0] == snakepoints[2]:
+			screen.gameOver(pressedkey, snakepoints)
+		if (len(snakepoints)) == 3136:
+			screen.fDrawString("YOU WIN",250,50)
+			screen.fDisplayScreen()
+			screen.restart(pressedkey)
+
+	def updateScore(self, screen, score):
+		#draw the new score on the screen
+		screen.fDrawString("Score: ",50,50)
+		screen.fDrawString(str(score),150,50)
+
+		screen.fDisplayScreen()
+		
+
+
+	def gameOver(screen, pressedkey, snakepoints):
+		screen.fDrawString("GAME OVER, YOU LOSE",200,50)
+		screen.fDisplayScreen()
+		#snake should stop moving
+		while (pressedkey==ord('d')) or (pressedkey==ord('a')) or (pressedkey==ord('w')) or (pressedkey==ord('s')):
+			for snakepoint in snakepoints:
+					screen.fDrawSnake(snakepoint[0],snakepoint[1])
+			screen.restart(pressedkey)
+
+
+	def restart(self, pressedkey):
+		if(pressedkey==ord('r')):
+			Main()
+	def win(self):
+		x = 2
+#***************************************************************************************
+def Main():
+	vGameScreen=cGameScreen();#This line is need to create a Screen For the Game
+	vSnakePoints=[[20,20],[19,20],[18,20]]
+	score = 0
+	foodlocation = [[25,20]]
+	
+
+	#MainGameLoop
+	while(True):
+		snakememory = vSnakePoints.copy()
+		x = vSnakePoints[0][0]
+		y = vSnakePoints[0][1]
+		tail = len(vSnakePoints)-1
+
+		vGameScreen.fRefreshScreen()#Creates an Empty Screen To Draw On
+		vGameScreen.fDrawGameField()#Draw the Grid on the background
+		vGameScreen.fDrawFood(foodlocation[0][0], foodlocation[0][1])#Draw a Snake Food in x=40 y=50 block on the grid
+		for vSnakePoint in vSnakePoints:#Iterate Through Snake Points
+			vGameScreen.fDrawSnake(vSnakePoint[0],vSnakePoint[1])#Draw A Snake block on the grid
+
+
+
+		vGameScreen.fDrawString("Score:",50,50)#Draw string "Score: 0" in x=50 y=50 Coordinates of the image
+		vGameScreen.fDrawString(str(score),150,50)
+		#print(score)
+
+
+
+		vGameScreen.fDisplayScreen()# Displays the screen to the user. This line is need to have an display
+		vPressedKey=vGameScreen.fGetPressedKey()#This Line needs to Come after Display Screen to Get if a key is pressed
+
+
+
+
+
+		vGameScreen.moveSnake(vPressedKey, vSnakePoints, vGameScreen, score, foodlocation)
+		if foodlocation[0] == snakememory[0]:
+			#print("Got here!")
+			score += 1
+			tail += 1
+			randomx = random.randrange(56)
+			randomy = random.randrange(56)
+			vGameScreen.fDrawFood(randomx,randomy)
+			foodlocation.pop(0)
+			foodlocation.append([randomx,randomy])
+			vGameScreen.fDrawFood(randomx,randomy)
+
+			#snake grows bigger
+			if(vPressedKey==ord('w')):
+				newhead = vSnakePoints[0][1]-1
+				#if [self.x, newhead] in snakememory:
+					#screen.gameOver(pressedkey,snakepoints)
+				vSnakePoints.append([x,newhead])
+				for vSnakePoint in vSnakePoints:
+					vGameScreen.fDrawSnake(vSnakePoint[0],vSnakePoint[1])
+				#print(vSnakePoints)
+
+				#screen.updateScore(screen, score)
+				#randomx = random.randrange(56)
+				#randomy = random.randrange(56)
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#foodlocation.pop(0)
+				#foodlocation.append([randomx,randomy])
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#vGameScreen.fDisplayScreen()
+
+			if(vPressedKey==ord('s')):
+				newhead = vSnakePoints[0][1]+1
+				#if [self.x, newhead] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				vSnakePoints.append([x,newhead])
+				for vSnakePoint in vSnakePoints:
+					vGameScreen.fDrawSnake(vSnakePoint[0],vSnakePoint[1])
+				#screen.updateScore(screen, score)
+				#screen.updateScore(screen, score)
+				#randomx = random.randrange(56)
+				#randomy = random.randrange(56)
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#foodlocation.pop(0)
+				#foodlocation.append([randomx,randomy])
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#vGameScreen.fDisplayScreen()
+
+			if(vPressedKey==ord('a')):
+				newhead = vSnakePoints[0][0]-1
+				#if [newhead,y] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				vSnakePoints.append([newhead, y])
+				for vSnakePoint in vSnakePoints:
+					vGameScreen.fDrawSnake(vSnakePoint[0],vSnakePoint[1])
+				#screen.updateScore(screen, score)
+				#screen.updateScore(screen, score)
+				#randomx = random.randrange(56)
+				#randomy = random.randrange(56)
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#foodlocation.pop(0)
+				#foodlocation.append([randomx,randomy])
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#vGameScreen.fDisplayScreen()
+
+			if(vPressedKey==ord('d')):
+				#print("Test: " + str(vSnakePoints))
+				newhead = vSnakePoints[0][0]+1
+				#if [newhead, self.y] in snakememory:
+					#screen.gameOver(pressedkey, snakepoints)
+				vSnakePoints.append([newhead, y])
+				for vSnakePoint in vSnakePoints:
+					vGameScreen.fDrawSnake(vSnakePoint[0],vSnakePoint[1])
+				#print(vSnakePoints)
+
+				#screen.updateScore(screen, score)
+				#screen.updateScore(screen, score)
+				#randomx = random.randrange(56)
+				#randomy = random.randrange(56)
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#foodlocation.pop(0)
+				#foodlocation.append([randomx,randomy])
+				#vGameScreen.fDrawFood(randomx,randomy)
+				#vGameScreen.fDisplayScreen()
+
+
+		vGameScreen.fDisplayScreen()
+		vGameScreen.checkBorder(vGameScreen, vSnakePoints, vPressedKey)
+		vGameScreen.restart(vPressedKey)
+
+
+
+
+
+
+		#You can use similar if statements to check which keyboard button is pressed also read ord() function
+		#https://docs.python.org/3/library/functions.html#ord
+		#Never checks for special keys, if you need special keys like up arrow button change waitkey to waitKeyEx
+		#If you change to waitKeyEx use following codes https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+		if(vPressedKey==ord('q')):#Checks If the q button is pressed on keyboard
+				exit()#Exits the program
+		time.sleep(0.1)#SpeedOfTheGame: wait in seconds(You can increase the number for a slower game and decrease the number for a faster game)
+#***************************************************************************************
+if __name__ == "__main__":
+	Main()#Calls Main To start The game DO NOT DELETE
+
+
